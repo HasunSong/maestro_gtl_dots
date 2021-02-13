@@ -4,10 +4,11 @@
 import numpy as np
 from sklearn.cluster import KMeans
 
-THRESHOLD = 1000
+THRESHOLD = 2000000
 K_MAX = 5
 
-def cluster_points(point_lst):
+
+def cluster_points(point_lst, print_value=False):
     coord_lst = []
     for point in point_lst:
         coord_lst.append([point.x, point.y])
@@ -15,7 +16,7 @@ def cluster_points(point_lst):
 
     # k값을 1부터 k_max까지 돌려보고 최소의 WSS score를 탐색한다.
 
-    for k in range(2, K_MAX, 1):
+    for k in range(1, K_MAX, 1):
         kmeans = KMeans(n_clusters=k).fit(coord_lst)
         centroids = kmeans.cluster_centers_
         labels = kmeans.labels_
@@ -30,7 +31,8 @@ def cluster_points(point_lst):
         # 값 리스트에 저장
         # 날짜가 같은 기사끼리 명확하게 군집화되면 이 점수가 0에 매우 급격히 수렴한다.
         # 따라서  0.001 이하가 되는 최초의 k을 클러스터 수로 지정하고 label과 centroid를 return한다.
-        # print(k, curr_sse)
+        if print_value:
+            print(k, curr_sse)
         if curr_sse < THRESHOLD:
             for i in range(len(point_lst)):
                 curr_point = point_lst[i]

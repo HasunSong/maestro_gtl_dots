@@ -3,7 +3,7 @@
 # 어떻게 해야 플레이어를 헷갈리게 할 수 있을지를 고려해서 짜야 함.
 import copy
 import numpy as np
-
+from sklearn.cluster import KMeans
 
 # %%
 # 각 그룹의 사이즈 계산
@@ -16,6 +16,26 @@ def cal_group_size(point_lst):
     for group in groups:
         group_size[group] += 1
     return group_size
+
+
+# point를 그룹별로 묶고, 사이즈 큰 순서대로 나열
+def sort_groups(point_lst):
+    group_size = cal_group_size(point_lst)
+    temp_g_s = copy.copy(group_size)
+    temp_g_s.sort(reverse=True)
+    sorted_group_name = []
+    for gs in temp_g_s:
+        for i in range(len(group_size)):
+            if group_size[i] == gs and i not in sorted_group_name:
+                sorted_group_name.append(i)
+    result = []
+    for group_name in sorted_group_name:
+        temp = []
+        for point in point_lst:
+            if point.group == group_name:
+                temp.append(point)
+        result.append(temp)
+    return result
 
 
 # 주어진 point 중 랜덤하게 n 개를 새로운 center로 지정
@@ -48,3 +68,30 @@ def reset_centers_v1(point_lst):
     for point in point_lst:
         point.type = "moon"
     randomly_set_new_centers(second_group_points, 3)
+
+
+# point들을 k개의 그룹으로 그룹화. 각 그룹의 centroid에 가장 가까운 점 하나를 새로운 center로 지정.
+# 나머지 점들은 moon으로 지정.
+def centers_to_centers(point_lst, k):
+    coord_lst = []
+    for point in point_lst:
+        coord_lst.append([point.x, point.y])
+    coord_lst = np.array(coord_lst)
+
+    kmeans = KMeans(n_clusters=k).fit(coord_lst)
+    centroids = kmeans.cluster_centers_
+    labels = kmeans.labels_
+
+    for point in point_lst:
+        point.type = "moon"
+    dist_lst = [[], [], [], [], [], []]
+    for i in range(k):
+        cx, cy = centroids[i][0], centroids[i][1]
+        for point in point_lst:
+            dist_lst[i].append((point.x-cx)**2+(point.y-cy)**2)
+    for i in range(k):
+        temp_min = min(dist_lst[i])
+        for j in range(len(dist_lst[i])):
+            if dist_lst[i][j] == temp_min:
+                point_lst[j].type = "center"
+    return k
